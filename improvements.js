@@ -1,91 +1,89 @@
-const makeCombos= (arr) => {
-  let res = new Map();
+const makeCombos = (arr) => {
+  // O(n^2)
+  let combos = new Set();
   for (let i = 0; i < arr.length; i++) {
     for (let j = i + 1; j < arr.length; j++) {
-      res.set(
-        JSON.stringify([arr[i], arr[j]]),
-        JSON.stringify([arr[i], arr[j]])
-      );
+      combos.add(JSON.stringify([arr[i], arr[j]]));
     }
   }
-  return res;
+  return combos;
 };
 
 const makeGrid = (num) => {
-  let res = new Array(num - 1).fill(null).map((el) => new Set());
-//   res.forEach((el) => {
-//     for (let i = 0; i < Math.floor(num / 2); i++) {
-//       el.push(null);
-//     }
-//   });
-  return res;
+  // O(n^2)
+  let grid = new Array(num - 1).fill(null).map((el) => []);
+  return grid;
 };
 
 const placeCombos = (arr) => {
   let graphs = new Set();
   let res = makeGrid(arr.length);
   let combos = makeCombos(arr);
-  let dayLookUp =  new Array(num - 1).fill(null).map((el) => new Set());
-
-  let stack = [];
-  let i = 0;
-  let j = 0;
+  let dayLookUp = new Array(arr.length - 1).fill(null).map((el) => new Set());
   let lastRowLength = arr.length / 2;
 
-  while (res[res.length - 1].size() !== lastRowLength) {
+  let t = 0;
+  for (let combo of combos) {
+    if (t >= lastRowLength) break;
+    let [a, b] = JSON.parse(combo);
+    dayLookUp[t].add(a);
+    dayLookUp[t].add(b);
+    combos.delete(combo)
+    res[t].push(combo);
+    t++;
+  }
+
+  let i = 0;
+
+  while (res[res.length - 1].length < lastRowLength) {
     let used = false;
-    for (let [groupIdx, combo] of combos) {
-      if (isValidPlacement(dayLookUp[i], combo)) {
-        res[i][j] = combo;
+    for (let combo of combos) {
+      let [personA, personB] = JSON.parse(combo);
+      if (isValidPlacement(dayLookUp[i], personA, personB)) {
+        res[i].push(combo);
+        dayLookUp[i].add(personA);
+        dayLookUp[i].add(personB);
+
         let graph = res.toString();
         if (graphs.has(graph)) {
-          res[i][j] = null;
+          res[i].pop();
+          dayLookUp[i].delete(personA);
+          dayLookUp[i].delete(personB);
           used = false;
           break;
         } else {
           graphs.add(graph);
-          combos.delete(groupIdx);
+          combos.delete(combo);
           used = true;
-          if (!stillSpace(res[i])) {
+          if (res[i].length >= lastRowLength) {
             i += 1;
-            j = 0;
-            break;
-          } else {
-            j += 1;
-            break;
           }
+          break;
         }
       }
     }
     if (!used) {
-      [i, j] = findsLast(res, i, j);
-      let temp = res[i][j];
-      res[i][j] = null;
-      combos.set(temp, temp);
+      i = findsLast(res);
+      let temp = res[i].pop();
+      let [tempA, tempB] = JSON.parse(temp);
+      dayLookUp[i].delete(tempA);
+      dayLookUp[i].delete(tempB);
+      combos.add(temp);
     }
   }
 
   return res;
 };
 
-
-const findsLast = (grid, i , j) => {
-  for (let x = i; x >= 0; x--) {
-    for (let y = j; y >= 0; y--) {
-      if (grid[x][y]) {
-        return [x, y];
-      }
-    }
+const findsLast = (grid) => {
+  for (let i = grid.length - 1; i >= 0; i--) {
+    if (grid[i].length > 1) return i;
   }
+  return 0;
 };
 
-const stillSpace = (day) => {
-  return day.some((pair) => pair === null);
-};
-
-const isValidPlacement = (day, pair) => {
-    let [personA, personB] = JSON.parse(pair);
-    return !day.has(personA) && !day.has(personB);
+const isValidPlacement = (day, personA, personB) => {
+  return !day.has(personA) && !day.has(personB);
 };
 
 const pairStudents = (arr) => {
@@ -118,6 +116,10 @@ let arr = [
   "t",
   "u",
   "v",
+    "w",
+    "x",
+  //   "y",
+  //   "z"
 ];
 
 let classRoom = `Ashya Manning
