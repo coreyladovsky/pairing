@@ -1,97 +1,124 @@
-const makeCombos = arr => {
-  let res = [];
+const makeCombos= (arr) => {
+  let res = new Map();
   for (let i = 0; i < arr.length; i++) {
     for (let j = i + 1; j < arr.length; j++) {
-      res.push([arr[i], arr[j]]);
+      res.set(
+        JSON.stringify([arr[i], arr[j]]),
+        JSON.stringify([arr[i], arr[j]])
+      );
     }
   }
   return res;
 };
 
-const makeGrid = num => {
-  let res = new Array(num - 1).fill(null).map(el => []);
-  res.forEach(el => {
-    for (let i = 0; i < Math.floor(num / 2); i++) {
-      el.push(null);
-    }
-  });
+const makeGrid = (num) => {
+  let res = new Array(num - 1).fill(null).map((el) => new Set());
+//   res.forEach((el) => {
+//     for (let i = 0; i < Math.floor(num / 2); i++) {
+//       el.push(null);
+//     }
+//   });
   return res;
 };
 
-const placeCombos = arr => {
+const placeCombos = (arr) => {
   let graphs = new Set();
   let res = makeGrid(arr.length);
   let combos = makeCombos(arr);
+  let dayLookUp =  new Array(num - 1).fill(null).map((el) => new Set());
+
+  let stack = [];
   let i = 0;
   let j = 0;
+  let lastRowLength = arr.length / 2;
 
-  while (!res[res.length - 1][res[res.length - 1].length - 1]) {
+  while (res[res.length - 1].size() !== lastRowLength) {
     let used = false;
-    forLoop: for (let groupIdx = 0; groupIdx < combos.length; groupIdx++) {
-      if (isValidPlacement(res[i], combos[groupIdx])) {
-        res[i][j] = combos[groupIdx];
+    for (let [groupIdx, combo] of combos) {
+      if (isValidPlacement(dayLookUp[i], combo)) {
+        res[i][j] = combo;
         let graph = res.toString();
         if (graphs.has(graph)) {
           res[i][j] = null;
           used = false;
-          break forLoop;
+          break;
         } else {
           graphs.add(graph);
-          combos = combos.slice(0, groupIdx).concat(combos.slice(groupIdx + 1));
+          combos.delete(groupIdx);
           used = true;
           if (!stillSpace(res[i])) {
             i += 1;
             j = 0;
-
-            break forLoop;
+            break;
           } else {
             j += 1;
-            break forLoop;
+            break;
           }
         }
       }
     }
     if (!used) {
-      [i, j] = findsLast(res);
+      [i, j] = findsLast(res, i, j);
       let temp = res[i][j];
       res[i][j] = null;
-      combos.push(temp);
+      combos.set(temp, temp);
     }
   }
 
   return res;
 };
 
-const findsLast = grid => {
-  for (let i = grid.length - 1; i >= 0; i--) {
-    for (let j = grid[i].length - 1; j >= 0; j--) {
-      if (grid[i][j]) {
-        return [i, j];
+
+const findsLast = (grid, i , j) => {
+  for (let x = i; x >= 0; x--) {
+    for (let y = j; y >= 0; y--) {
+      if (grid[x][y]) {
+        return [x, y];
       }
     }
   }
 };
 
-const stillSpace = day => {
-  return day.some(pair => pair === null);
+const stillSpace = (day) => {
+  return day.some((pair) => pair === null);
 };
 
 const isValidPlacement = (day, pair) => {
-  if (!day) return false;
-  return day.every(
-    combo =>
-      combo === null || (!combo.includes(pair[0]) && !combo.includes(pair[1]))
-  );
+    let [personA, personB] = JSON.parse(pair);
+    return !day.has(personA) && !day.has(personB);
 };
 
-const pairStudents = arr => {
+const pairStudents = (arr) => {
   if (arr.length % 2) {
     arr.push(null);
   }
   return placeCombos(arr);
 };
 
-let arr = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v"];
+let arr = [
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "k",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+];
 
 let classRoom = `Ashya Manning
 Brandon Brown
@@ -136,7 +163,7 @@ let classArray = classRoom.split("\n");
 // }
 
 // let allCombos = makeCombos(arr);
-
+//     console.log(allCombos)
 console.log(pairStudents(arr));
 //
 // let rand = [ [ [ 'a', 'b' ],
